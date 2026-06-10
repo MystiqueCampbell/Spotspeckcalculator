@@ -1,0 +1,398 @@
+import { useState, useEffect, useRef } from "react";
+
+const GREEN = "#2DB84B";
+const GREEN_DARK = "#1A8C33";
+const GREEN_BRIGHT = "#39E05A";
+const BLACK = "#0A0A0A";
+const DARK = "#111411";
+const DARK2 = "#181F18";
+const PANEL = "#1A211A";
+const BORDER = "#243024";
+const GRAY = "#8A9E8A";
+const WHITE = "#F0F7F0";
+
+function AnimatedNumber({ value }) {
+  const [display, setDisplay] = useState(value);
+  const [flash, setFlash] = useState(false);
+  const prev = useRef(value);
+
+  useEffect(() => {
+    if (prev.current === value) return;
+    setFlash(true);
+    const start = prev.current;
+    const end = value;
+    const diff = end - start;
+    const duration = 220;
+    const startTime = performance.now();
+    const tick = (now) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(start + diff * ease));
+      if (t < 1) requestAnimationFrame(tick);
+      else { setDisplay(end); setFlash(false); }
+    };
+    requestAnimationFrame(tick);
+    prev.current = value;
+  }, [value]);
+
+  return (
+    <span style={{
+      display: "inline-block",
+      transition: "transform 0.15s",
+      transform: flash ? "scale(1.06)" : "scale(1)",
+      color: GREEN_BRIGHT,
+    }}>
+      ${display.toFixed(0)}
+    </span>
+  );
+}
+
+function Bin({ dirty }) {
+  return (
+    <svg width="38" height="44" viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* wheels */}
+      <circle cx="10" cy="41" r="3" fill={dirty ? "#3A3020" : GREEN_DARK} />
+      <circle cx="28" cy="41" r="3" fill={dirty ? "#3A3020" : GREEN_DARK} />
+      {/* body */}
+      <rect x="4" y="12" width="30" height="26" rx="3"
+        fill={dirty ? "#2A2010" : GREEN_DARK}
+        stroke={dirty ? "#5A4A20" : GREEN}
+        strokeWidth="1.5" />
+      {/* dirt spots */}
+      {dirty && <>
+        <circle cx="13" cy="22" r="3" fill="#6B5020" opacity="0.8" />
+        <circle cx="24" cy="28" r="2" fill="#5A4018" opacity="0.7" />
+        <circle cx="18" cy="18" r="1.5" fill="#7A6030" opacity="0.6" />
+      </>}
+      {/* recycle / trash icon */}
+      {!dirty
+        ? <path d="M15 23l4-5 4 5h-2.5v4h-3v-4H15z M13 26h12" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        : <rect x="14" y="19" width="10" height="12" rx="1" stroke="#8A7040" strokeWidth="1.5" fill="none" />
+      }
+      {/* lid */}
+      <rect x="2" y="8" width="34" height="6" rx="2"
+        fill={dirty ? "#1A1508" : GREEN_DARK}
+        stroke={dirty ? "#4A3A18" : GREEN}
+        strokeWidth="1.5" />
+      {/* handle */}
+      <rect x="14" y="5" width="10" height="4" rx="2"
+        fill={dirty ? "#252015" : "#155228"}
+        stroke={dirty ? "#4A3A18" : GREEN_DARK}
+        strokeWidth="1" />
+      {/* sparkles when clean */}
+      {!dirty && <>
+        <path d="M33 6l1 2 1-2-1-2-1 2z" fill={GREEN_BRIGHT} />
+        <path d="M5 10l.7 1.4 .7-1.4-.7-1.4-.7 1.4z" fill={GREEN_BRIGHT} opacity="0.7" />
+      </>}
+    </svg>
+  );
+}
+
+export default function App() {
+  const [plan, setPlan] = useState("onetime");
+  const [bins, setBins] = useState(1);
+
+  const calcPrice = (p, b) => {
+    if (b === 0) return 0;
+    if (p === "onetime") return 35 + Math.max(0, b - 1) * 10;
+    return 25 + Math.max(0, b - 1) * 10;
+  };
+
+  const price = calcPrice(plan, bins);
+  const otherPrice = calcPrice(plan === "onetime" ? "monthly" : "onetime", bins);
+  const savings = plan === "monthly" ? calcPrice("onetime", bins) - price : 0;
+
+  const addBin = () => setBins(b => Math.min(b + 1, 20));
+  const removeBin = () => setBins(b => Math.max(b - 1, 1));
+
+  const firstBinPrice = plan === "onetime" ? 35 : 25;
+  const addlBinPrice = 10;
+
+  return (
+    <div style={{
+      background: BLACK, minHeight: "100vh", fontFamily: "'Arial Black', 'Impact', 'Helvetica Neue', sans-serif",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      padding: "0 0 40px",
+    }}>
+
+      {/* HEADER */}
+      <div style={{
+        width: "100%", background: `linear-gradient(180deg, #0D150D 0%, ${BLACK} 100%)`,
+        borderBottom: `2px solid ${GREEN}`,
+        padding: "20px 20px 16px", textAlign: "center",
+        boxShadow: `0 4px 40px rgba(45,184,75,0.15)`,
+      }}>
+        {/* Logo badge */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 10,
+          background: DARK2, border: `1.5px solid ${BORDER}`,
+          borderRadius: 10, padding: "8px 16px", marginBottom: 10,
+        }}>
+          <span style={{ fontSize: 26 }}>🗑️</span>
+          <div style={{ textAlign: "left" }}>
+            <div style={{
+              fontSize: 20, fontWeight: 900, letterSpacing: "0.04em",
+              background: `linear-gradient(90deg, #fff 40%, ${GREEN} 100%)`,
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              textTransform: "uppercase",
+            }}>
+              SPOTSPECK
+            </div>
+            <div style={{ fontSize: 10, color: GREEN, letterSpacing: "0.22em", fontWeight: 700, textTransform: "uppercase", marginTop: -2 }}>
+              SANITATION
+            </div>
+          </div>
+        </div>
+        <div style={{ color: GRAY, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          Bin Cleaning Price Calculator
+        </div>
+      </div>
+
+      <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px 0" }}>
+
+        {/* PLAN TOGGLE */}
+        <div style={{
+          background: DARK2, border: `1.5px solid ${BORDER}`, borderRadius: 12,
+          padding: 5, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginBottom: 18,
+        }}>
+          {[
+            { key: "onetime", label: "ONE-TIME", sub: "From $35" },
+            { key: "monthly", label: "MONTHLY", sub: "From $25 · Save more" },
+          ].map(p => (
+            <button key={p.key} onClick={() => setPlan(p.key)} style={{
+              padding: "12px 8px", borderRadius: 8, border: "none", cursor: "pointer",
+              background: plan === p.key ? `linear-gradient(135deg, ${GREEN_DARK}, ${GREEN})` : "transparent",
+              boxShadow: plan === p.key ? `0 2px 16px rgba(45,184,75,0.35)` : "none",
+              transition: "all 0.2s",
+            }}>
+              <div style={{
+                fontSize: 13, fontWeight: 900, letterSpacing: "0.08em",
+                color: plan === p.key ? "#fff" : GRAY, textTransform: "uppercase"
+              }}>{p.label}</div>
+              <div style={{ fontSize: 10, color: plan === p.key ? "rgba(255,255,255,0.75)" : "#556055", marginTop: 2, fontFamily: "Arial, sans-serif", fontWeight: 400 }}>
+                {p.sub}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* PRICING INFO STRIP */}
+        <div style={{
+          display: "flex", gap: 8, marginBottom: 18,
+        }}>
+          <div style={{
+            flex: 1, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10,
+            padding: "10px 12px", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 10, color: GRAY, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", fontWeight: 400 }}>1st bin</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: GREEN, lineHeight: 1.1 }}>${firstBinPrice}</div>
+            <div style={{ fontSize: 10, color: "#445044", fontFamily: "Arial, sans-serif" }}>flat rate</div>
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: BORDER, fontSize: 20, fontWeight: 900,
+          }}>+</div>
+          <div style={{
+            flex: 1, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10,
+            padding: "10px 12px", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 10, color: GRAY, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", fontWeight: 400 }}>each add'l</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: WHITE, lineHeight: 1.1 }}>${addlBinPrice}</div>
+            <div style={{ fontSize: 10, color: "#445044", fontFamily: "Arial, sans-serif" }}>per bin</div>
+          </div>
+        </div>
+
+        {/* BIN COUNTER */}
+        <div style={{
+          background: DARK2, border: `1.5px solid ${BORDER}`, borderRadius: 14,
+          padding: "20px 16px", marginBottom: 18, textAlign: "center",
+        }}>
+          <div style={{ fontSize: 11, color: GRAY, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", marginBottom: 14 }}>
+            How many bins?
+          </div>
+
+          {/* Visual bins */}
+          <div style={{
+            display: "flex", flexWrap: "wrap", justifyContent: "center",
+            gap: 6, marginBottom: 16, minHeight: 52,
+          }}>
+            {Array.from({ length: Math.min(bins, 10) }).map((_, i) => (
+              <div key={i} style={{ opacity: 1, animation: "none" }}>
+                <Bin dirty={false} />
+              </div>
+            ))}
+            {bins > 10 && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 38, height: 44, background: PANEL, borderRadius: 6,
+                border: `1px solid ${BORDER}`, color: GREEN, fontSize: 13, fontWeight: 900
+              }}>+{bins - 10}</div>
+            )}
+          </div>
+
+          {/* Counter controls */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
+            <button onClick={removeBin} disabled={bins <= 1} style={{
+              width: 48, height: 48, borderRadius: "50%", border: `2px solid ${bins <= 1 ? BORDER : GREEN}`,
+              background: bins <= 1 ? "transparent" : "transparent",
+              color: bins <= 1 ? BORDER : GREEN, fontSize: 28, fontWeight: 900,
+              cursor: bins <= 1 ? "not-allowed" : "pointer", lineHeight: 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s",
+            }}>−</button>
+
+            <div style={{ textAlign: "center", minWidth: 80 }}>
+              <div style={{ fontSize: 48, fontWeight: 900, color: WHITE, lineHeight: 1 }}>{bins}</div>
+              <div style={{ fontSize: 11, color: GRAY, fontFamily: "Arial, sans-serif" }}>bin{bins !== 1 ? "s" : ""}</div>
+            </div>
+
+            <button onClick={addBin} disabled={bins >= 20} style={{
+              width: 48, height: 48, borderRadius: "50%", border: `2px solid ${bins >= 20 ? BORDER : GREEN}`,
+              background: bins >= 20 ? "transparent" : `rgba(45,184,75,0.1)`,
+              color: bins >= 20 ? BORDER : GREEN, fontSize: 28, fontWeight: 900,
+              cursor: bins >= 20 ? "not-allowed" : "pointer", lineHeight: 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s",
+            }}>+</button>
+          </div>
+
+          {/* Quick picks */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} onClick={() => setBins(n)} style={{
+                width: 36, height: 36, borderRadius: 8,
+                border: `1.5px solid ${bins === n ? GREEN : BORDER}`,
+                background: bins === n ? `rgba(45,184,75,0.15)` : "transparent",
+                color: bins === n ? GREEN : GRAY,
+                fontSize: 14, fontWeight: 900, cursor: "pointer",
+                transition: "all 0.15s",
+              }}>{n}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* PRICE DISPLAY */}
+        <div style={{
+          background: `linear-gradient(135deg, #0D1A0D, #0F200F)`,
+          border: `2px solid ${GREEN}`,
+          borderRadius: 14, padding: "22px 20px",
+          boxShadow: `0 0 40px rgba(45,184,75,0.2), inset 0 1px 0 rgba(45,184,75,0.1)`,
+          marginBottom: 14, textAlign: "center",
+        }}>
+          <div style={{ fontSize: 11, color: GREEN, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", marginBottom: 6 }}>
+            {plan === "onetime" ? "One-Time Service" : "Monthly Service"} · {bins} bin{bins !== 1 ? "s" : ""}
+          </div>
+          <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.02em" }}>
+            <AnimatedNumber value={price} />
+          </div>
+          <div style={{ fontSize: 12, color: GRAY, fontFamily: "Arial, sans-serif", marginTop: 6 }}>
+            {plan === "monthly" ? "billed monthly · cancel anytime" : "one-time clean"}
+          </div>
+
+          {/* Breakdown */}
+          {bins > 1 && (
+            <div style={{
+              marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}`,
+              display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap",
+            }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: GRAY, fontFamily: "Arial, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>1st bin</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: WHITE }}>${firstBinPrice}</div>
+              </div>
+              <div style={{ color: BORDER, fontSize: 20, display: "flex", alignItems: "center" }}>+</div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: GRAY, fontFamily: "Arial, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>{bins - 1} add'l bin{bins - 1 !== 1 ? "s" : ""}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: WHITE }}>${(bins - 1) * addlBinPrice}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SAVINGS NUDGE */}
+        {plan === "onetime" && bins >= 1 && (
+          <div style={{
+            background: `rgba(45,184,75,0.08)`, border: `1px solid rgba(45,184,75,0.25)`,
+            borderRadius: 10, padding: "10px 14px", marginBottom: 14,
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <span style={{ fontSize: 18 }}>💡</span>
+            <div style={{ fontFamily: "Arial, sans-serif" }}>
+              <span style={{ fontSize: 13, color: GREEN_BRIGHT, fontWeight: 700 }}>
+                Switch to monthly and pay ${calcPrice("monthly", bins)}/mo
+              </span>
+              <span style={{ fontSize: 12, color: GRAY }}> — saves ${calcPrice("onetime", bins) - calcPrice("monthly", bins)} every visit</span>
+            </div>
+          </div>
+        )}
+        {plan === "monthly" && (
+          <div style={{
+            background: `rgba(45,184,75,0.08)`, border: `1px solid rgba(45,184,75,0.25)`,
+            borderRadius: 10, padding: "10px 14px", marginBottom: 14,
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <span style={{ fontSize: 18 }}>✅</span>
+            <div style={{ fontFamily: "Arial, sans-serif" }}>
+              <span style={{ fontSize: 13, color: GREEN_BRIGHT, fontWeight: 700 }}>
+                You're saving ${savings} vs. one-time
+              </span>
+              <span style={{ fontSize: 12, color: GRAY }}> every single month</span>
+            </div>
+          </div>
+        )}
+
+        {/* COMPARISON TABLE */}
+        <div style={{
+          background: DARK2, border: `1px solid ${BORDER}`, borderRadius: 12,
+          overflow: "hidden", marginBottom: 20,
+        }}>
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+            background: "#0D130D", borderBottom: `1px solid ${BORDER}`,
+          }}>
+            {["Bins", "One-Time", "Monthly"].map((h, i) => (
+              <div key={h} style={{
+                padding: "8px 4px", textAlign: "center",
+                fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
+                color: i === 0 ? GRAY : i === (plan === "onetime" ? 1 : 2) ? GREEN : GRAY,
+                textTransform: "uppercase",
+                borderRight: i < 2 ? `1px solid ${BORDER}` : "none",
+              }}>{h}</div>
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5].map((n, idx) => (
+            <div key={n} style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+              background: bins === n ? `rgba(45,184,75,0.06)` : idx % 2 === 0 ? DARK2 : PANEL,
+              borderBottom: `1px solid ${BORDER}`,
+            }}>
+              {[
+                n.toString(),
+                `$${calcPrice("onetime", n)}`,
+                `$${calcPrice("monthly", n)}`,
+              ].map((val, i) => (
+                <div key={i} style={{
+                  padding: "8px 4px", textAlign: "center",
+                  fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 700 : 900,
+                  color: bins === n && i > 0 ? (plan === "onetime" && i === 1 ? GREEN_BRIGHT : plan === "monthly" && i === 2 ? GREEN_BRIGHT : WHITE) : i === 0 ? GRAY : WHITE,
+                  borderRight: i < 2 ? `1px solid ${BORDER}` : "none",
+                  fontFamily: i === 0 ? "inherit" : "Arial, sans-serif",
+                }}>{val}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* FOOTER */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "#334033", fontFamily: "Arial, sans-serif", letterSpacing: "0.04em" }}>
+            SpotSpeck Sanitation · Greater Boston, MA
+          </div>
+          <div style={{ fontSize: 10, color: "#263026", fontFamily: "Arial, sans-serif", marginTop: 3 }}>
+            Norwood · Westwood · Walpole · Dedham · Canton
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
