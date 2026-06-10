@@ -1,398 +1,637 @@
-import { useState, useEffect, useRef } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpotSpeck Sanitation · Price Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-const GREEN = "#2DB84B";
-const GREEN_DARK = "#1A8C33";
-const GREEN_BRIGHT = "#39E05A";
-const BLACK = "#0A0A0A";
-const DARK = "#111411";
-const DARK2 = "#181F18";
-const PANEL = "#1A211A";
-const BORDER = "#243024";
-const GRAY = "#8A9E8A";
-const WHITE = "#F0F7F0";
+    :root {
+      --green: #2DB84B;
+      --green-dark: #1A8C33;
+      --green-bright: #39E05A;
+      --black: #0A0A0A;
+      --dark: #111411;
+      --dark2: #181F18;
+      --panel: #1A211A;
+      --border: #243024;
+      --gray: #8A9E8A;
+      --white: #F0F7F0;
+    }
 
-function AnimatedNumber({ value }) {
-  const [display, setDisplay] = useState(value);
-  const [flash, setFlash] = useState(false);
-  const prev = useRef(value);
+    body {
+      background: var(--black);
+      font-family: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 48px;
+      color: var(--white);
+    }
 
-  useEffect(() => {
-    if (prev.current === value) return;
-    setFlash(true);
-    const start = prev.current;
-    const end = value;
-    const diff = end - start;
-    const duration = 220;
-    const startTime = performance.now();
-    const tick = (now) => {
-      const t = Math.min((now - startTime) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(start + diff * ease));
-      if (t < 1) requestAnimationFrame(tick);
-      else { setDisplay(end); setFlash(false); }
-    };
-    requestAnimationFrame(tick);
-    prev.current = value;
-  }, [value]);
+    /* HEADER */
+    .header {
+      width: 100%;
+      background: linear-gradient(180deg, #0D150D 0%, var(--black) 100%);
+      border-bottom: 2px solid var(--green);
+      padding: 20px 20px 16px;
+      text-align: center;
+      box-shadow: 0 4px 40px rgba(45,184,75,0.15);
+    }
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--dark2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      margin-bottom: 10px;
+    }
+    .logo-icon { font-size: 26px; }
+    .logo-name {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #fff 40%, var(--green) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-sub {
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 0.22em;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: -2px;
+      font-family: Arial, sans-serif;
+      -webkit-text-fill-color: var(--green);
+    }
+    .header-sub {
+      color: var(--gray);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+    }
 
-  return (
-    <span style={{
-      display: "inline-block",
-      transition: "transform 0.15s",
-      transform: flash ? "scale(1.06)" : "scale(1)",
-      color: GREEN_BRIGHT,
-    }}>
-      ${display.toFixed(0)}
-    </span>
-  );
-}
+    /* MAIN WRAP */
+    .wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 16px 0;
+    }
 
-function Bin({ dirty }) {
-  return (
-    <svg width="38" height="44" viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* wheels */}
-      <circle cx="10" cy="41" r="3" fill={dirty ? "#3A3020" : GREEN_DARK} />
-      <circle cx="28" cy="41" r="3" fill={dirty ? "#3A3020" : GREEN_DARK} />
-      {/* body */}
-      <rect x="4" y="12" width="30" height="26" rx="3"
-        fill={dirty ? "#2A2010" : GREEN_DARK}
-        stroke={dirty ? "#5A4A20" : GREEN}
-        strokeWidth="1.5" />
-      {/* dirt spots */}
-      {dirty && <>
-        <circle cx="13" cy="22" r="3" fill="#6B5020" opacity="0.8" />
-        <circle cx="24" cy="28" r="2" fill="#5A4018" opacity="0.7" />
-        <circle cx="18" cy="18" r="1.5" fill="#7A6030" opacity="0.6" />
-      </>}
-      {/* recycle / trash icon */}
-      {!dirty
-        ? <path d="M15 23l4-5 4 5h-2.5v4h-3v-4H15z M13 26h12" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-        : <rect x="14" y="19" width="10" height="12" rx="1" stroke="#8A7040" strokeWidth="1.5" fill="none" />
-      }
-      {/* lid */}
-      <rect x="2" y="8" width="34" height="6" rx="2"
-        fill={dirty ? "#1A1508" : GREEN_DARK}
-        stroke={dirty ? "#4A3A18" : GREEN}
-        strokeWidth="1.5" />
-      {/* handle */}
-      <rect x="14" y="5" width="10" height="4" rx="2"
-        fill={dirty ? "#252015" : "#155228"}
-        stroke={dirty ? "#4A3A18" : GREEN_DARK}
-        strokeWidth="1" />
-      {/* sparkles when clean */}
-      {!dirty && <>
-        <path d="M33 6l1 2 1-2-1-2-1 2z" fill={GREEN_BRIGHT} />
-        <path d="M5 10l.7 1.4 .7-1.4-.7-1.4-.7 1.4z" fill={GREEN_BRIGHT} opacity="0.7" />
-      </>}
-    </svg>
-  );
-}
+    /* PLAN TOGGLE */
+    .plan-toggle {
+      background: var(--dark2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 5px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin-bottom: 18px;
+    }
+    .plan-btn {
+      padding: 12px 8px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .plan-btn.active {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      box-shadow: 0 2px 16px rgba(45,184,75,0.35);
+    }
+    .plan-btn-label {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--gray);
+      text-transform: uppercase;
+    }
+    .plan-btn.active .plan-btn-label { color: #fff; }
+    .plan-btn-sub {
+      font-size: 10px;
+      color: #556055;
+      margin-top: 2px;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+    }
+    .plan-btn.active .plan-btn-sub { color: rgba(255,255,255,0.75); }
 
-export default function App() {
-  const [plan, setPlan] = useState("onetime");
-  const [bins, setBins] = useState(1);
+    /* RATE STRIP */
+    .rate-strip {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+    .rate-card {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .rate-label {
+      font-size: 10px;
+      color: var(--gray);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+    }
+    .rate-price { font-size: 26px; font-weight: 900; line-height: 1.1; }
+    .rate-price.green { color: var(--green); }
+    .rate-price.white { color: var(--white); }
+    .rate-note { font-size: 10px; color: #445044; font-family: Arial, sans-serif; }
+    .rate-plus { color: var(--border); font-size: 20px; font-weight: 900; }
 
-  const calcPrice = (p, b) => {
-    if (b === 0) return 0;
-    if (p === "onetime") return 35 + Math.max(0, b - 1) * 10;
-    return 25 + Math.max(0, b - 1) * 10;
-  };
+    /* BIN COUNTER CARD */
+    .bin-card {
+      background: var(--dark2);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 16px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .bin-card-label {
+      font-size: 11px;
+      color: var(--gray);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: Arial, sans-serif;
+      margin-bottom: 14px;
+    }
+    .bin-icons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 16px;
+      min-height: 52px;
+    }
+    .bin-svg { display: inline-block; }
+    .bin-overflow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px; height: 44px;
+      background: var(--panel);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+    }
 
-  const price = calcPrice(plan, bins);
-  const otherPrice = calcPrice(plan === "onetime" ? "monthly" : "onetime", bins);
-  const savings = plan === "monthly" ? calcPrice("onetime", bins) - price : 0;
+    /* COUNTER CONTROLS */
+    .counter-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .counter-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--green);
+      background: transparent;
+      color: var(--green);
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      line-height: 1;
+      font-family: Arial, sans-serif;
+    }
+    .counter-btn:disabled {
+      border-color: var(--border);
+      color: var(--border);
+      cursor: not-allowed;
+    }
+    .counter-btn:not(:disabled):hover {
+      background: rgba(45,184,75,0.12);
+    }
+    .counter-num { font-size: 48px; font-weight: 900; color: var(--white); line-height: 1; }
+    .counter-unit { font-size: 11px; color: var(--gray); font-family: Arial, sans-serif; }
 
-  const addBin = () => setBins(b => Math.min(b + 1, 20));
-  const removeBin = () => setBins(b => Math.max(b - 1, 1));
+    /* QUICK PICKS */
+    .quick-picks {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .quick-btn.active {
+      border-color: var(--green);
+      background: rgba(45,184,75,0.15);
+      color: var(--green);
+    }
 
-  const firstBinPrice = plan === "onetime" ? 35 : 25;
-  const addlBinPrice = 10;
+    /* PRICE DISPLAY */
+    .price-card {
+      background: linear-gradient(135deg, #0D1A0D, #0F200F);
+      border: 2px solid var(--green);
+      border-radius: 14px;
+      padding: 22px 20px;
+      box-shadow: 0 0 40px rgba(45,184,75,0.2), inset 0 1px 0 rgba(45,184,75,0.1);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .price-eyebrow {
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-family: Arial, sans-serif;
+      margin-bottom: 6px;
+    }
+    .price-big {
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--green-bright);
+      transition: all 0.2s;
+    }
+    .price-note {
+      font-size: 12px;
+      color: var(--gray);
+      font-family: Arial, sans-serif;
+      margin-top: 6px;
+    }
+    .price-breakdown {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .breakdown-item { text-align: center; }
+    .breakdown-label {
+      font-size: 10px;
+      color: var(--gray);
+      font-family: Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .breakdown-val { font-size: 18px; font-weight: 900; color: var(--white); }
+    .breakdown-plus { color: var(--border); font-size: 20px; display: flex; align-items: center; }
 
-  return (
-    <div style={{
-      background: BLACK, minHeight: "100vh", fontFamily: "'Arial Black', 'Impact', 'Helvetica Neue', sans-serif",
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "0 0 40px",
-    }}>
+    /* NUDGE */
+    .nudge {
+      background: rgba(45,184,75,0.08);
+      border: 1px solid rgba(45,184,75,0.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .nudge-icon { font-size: 18px; }
+    .nudge-strong { font-size: 13px; color: var(--green-bright); font-weight: 700; }
+    .nudge-soft { font-size: 12px; color: var(--gray); }
 
-      {/* HEADER */}
-      <div style={{
-        width: "100%", background: `linear-gradient(180deg, #0D150D 0%, ${BLACK} 100%)`,
-        borderBottom: `2px solid ${GREEN}`,
-        padding: "20px 20px 16px", textAlign: "center",
-        boxShadow: `0 4px 40px rgba(45,184,75,0.15)`,
-      }}>
-        {/* Logo badge */}
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 10,
-          background: DARK2, border: `1.5px solid ${BORDER}`,
-          borderRadius: 10, padding: "8px 16px", marginBottom: 10,
-        }}>
-          <span style={{ fontSize: 26 }}>🗑️</span>
-          <div style={{ textAlign: "left" }}>
-            <div style={{
-              fontSize: 20, fontWeight: 900, letterSpacing: "0.04em",
-              background: `linear-gradient(90deg, #fff 40%, ${GREEN} 100%)`,
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              textTransform: "uppercase",
-            }}>
-              SPOTSPECK
-            </div>
-            <div style={{ fontSize: 10, color: GREEN, letterSpacing: "0.22em", fontWeight: 700, textTransform: "uppercase", marginTop: -2 }}>
-              SANITATION
-            </div>
-          </div>
-        </div>
-        <div style={{ color: GRAY, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Bin Cleaning Price Calculator
-        </div>
-      </div>
+    /* COMPARISON TABLE */
+    .compare-table {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .compare-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      background: #0D130D;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-head-cell {
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--gray);
+      text-transform: uppercase;
+      border-right: 1px solid var(--border);
+    }
+    .compare-head-cell:last-child { border-right: none; }
+    .compare-head-cell.active { color: var(--green); }
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-row:last-child { border-bottom: none; }
+    .compare-row.highlight { background: rgba(45,184,75,0.06); }
+    .compare-cell {
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--white);
+      border-right: 1px solid var(--border);
+      font-family: Arial, sans-serif;
+    }
+    .compare-cell:first-child { font-family: inherit; font-size: 13px; color: var(--gray); font-weight: 700; }
+    .compare-cell:last-child { border-right: none; }
+    .compare-cell.active-val { color: var(--green-bright); }
 
-      <div style={{ width: "100%", maxWidth: 420, padding: "20px 16px 0" }}>
+    /* FOOTER */
+    .footer { text-align: center; }
+    .footer-line1 {
+      font-size: 11px;
+      color: #334033;
+      font-family: Arial, sans-serif;
+      letter-spacing: 0.04em;
+    }
+    .footer-line2 {
+      font-size: 10px;
+      color: #263026;
+      font-family: Arial, sans-serif;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
 
-        {/* PLAN TOGGLE */}
-        <div style={{
-          background: DARK2, border: `1.5px solid ${BORDER}`, borderRadius: 12,
-          padding: 5, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginBottom: 18,
-        }}>
-          {[
-            { key: "onetime", label: "ONE-TIME", sub: "From $35" },
-            { key: "monthly", label: "MONTHLY", sub: "From $25 · Save more" },
-          ].map(p => (
-            <button key={p.key} onClick={() => setPlan(p.key)} style={{
-              padding: "12px 8px", borderRadius: 8, border: "none", cursor: "pointer",
-              background: plan === p.key ? `linear-gradient(135deg, ${GREEN_DARK}, ${GREEN})` : "transparent",
-              boxShadow: plan === p.key ? `0 2px 16px rgba(45,184,75,0.35)` : "none",
-              transition: "all 0.2s",
-            }}>
-              <div style={{
-                fontSize: 13, fontWeight: 900, letterSpacing: "0.08em",
-                color: plan === p.key ? "#fff" : GRAY, textTransform: "uppercase"
-              }}>{p.label}</div>
-              <div style={{ fontSize: 10, color: plan === p.key ? "rgba(255,255,255,0.75)" : "#556055", marginTop: 2, fontFamily: "Arial, sans-serif", fontWeight: 400 }}>
-                {p.sub}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* PRICING INFO STRIP */}
-        <div style={{
-          display: "flex", gap: 8, marginBottom: 18,
-        }}>
-          <div style={{
-            flex: 1, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10,
-            padding: "10px 12px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 10, color: GRAY, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", fontWeight: 400 }}>1st bin</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: GREEN, lineHeight: 1.1 }}>${firstBinPrice}</div>
-            <div style={{ fontSize: 10, color: "#445044", fontFamily: "Arial, sans-serif" }}>flat rate</div>
-          </div>
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: BORDER, fontSize: 20, fontWeight: 900,
-          }}>+</div>
-          <div style={{
-            flex: 1, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10,
-            padding: "10px 12px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 10, color: GRAY, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", fontWeight: 400 }}>each add'l</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: WHITE, lineHeight: 1.1 }}>${addlBinPrice}</div>
-            <div style={{ fontSize: 10, color: "#445044", fontFamily: "Arial, sans-serif" }}>per bin</div>
-          </div>
-        </div>
-
-        {/* BIN COUNTER */}
-        <div style={{
-          background: DARK2, border: `1.5px solid ${BORDER}`, borderRadius: 14,
-          padding: "20px 16px", marginBottom: 18, textAlign: "center",
-        }}>
-          <div style={{ fontSize: 11, color: GRAY, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", marginBottom: 14 }}>
-            How many bins?
-          </div>
-
-          {/* Visual bins */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", justifyContent: "center",
-            gap: 6, marginBottom: 16, minHeight: 52,
-          }}>
-            {Array.from({ length: Math.min(bins, 10) }).map((_, i) => (
-              <div key={i} style={{ opacity: 1, animation: "none" }}>
-                <Bin dirty={false} />
-              </div>
-            ))}
-            {bins > 10 && (
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 38, height: 44, background: PANEL, borderRadius: 6,
-                border: `1px solid ${BORDER}`, color: GREEN, fontSize: 13, fontWeight: 900
-              }}>+{bins - 10}</div>
-            )}
-          </div>
-
-          {/* Counter controls */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
-            <button onClick={removeBin} disabled={bins <= 1} style={{
-              width: 48, height: 48, borderRadius: "50%", border: `2px solid ${bins <= 1 ? BORDER : GREEN}`,
-              background: bins <= 1 ? "transparent" : "transparent",
-              color: bins <= 1 ? BORDER : GREEN, fontSize: 28, fontWeight: 900,
-              cursor: bins <= 1 ? "not-allowed" : "pointer", lineHeight: 1,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.15s",
-            }}>−</button>
-
-            <div style={{ textAlign: "center", minWidth: 80 }}>
-              <div style={{ fontSize: 48, fontWeight: 900, color: WHITE, lineHeight: 1 }}>{bins}</div>
-              <div style={{ fontSize: 11, color: GRAY, fontFamily: "Arial, sans-serif" }}>bin{bins !== 1 ? "s" : ""}</div>
-            </div>
-
-            <button onClick={addBin} disabled={bins >= 20} style={{
-              width: 48, height: 48, borderRadius: "50%", border: `2px solid ${bins >= 20 ? BORDER : GREEN}`,
-              background: bins >= 20 ? "transparent" : `rgba(45,184,75,0.1)`,
-              color: bins >= 20 ? BORDER : GREEN, fontSize: 28, fontWeight: 900,
-              cursor: bins >= 20 ? "not-allowed" : "pointer", lineHeight: 1,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.15s",
-            }}>+</button>
-          </div>
-
-          {/* Quick picks */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
-            {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} onClick={() => setBins(n)} style={{
-                width: 36, height: 36, borderRadius: 8,
-                border: `1.5px solid ${bins === n ? GREEN : BORDER}`,
-                background: bins === n ? `rgba(45,184,75,0.15)` : "transparent",
-                color: bins === n ? GREEN : GRAY,
-                fontSize: 14, fontWeight: 900, cursor: "pointer",
-                transition: "all 0.15s",
-              }}>{n}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* PRICE DISPLAY */}
-        <div style={{
-          background: `linear-gradient(135deg, #0D1A0D, #0F200F)`,
-          border: `2px solid ${GREEN}`,
-          borderRadius: 14, padding: "22px 20px",
-          boxShadow: `0 0 40px rgba(45,184,75,0.2), inset 0 1px 0 rgba(45,184,75,0.1)`,
-          marginBottom: 14, textAlign: "center",
-        }}>
-          <div style={{ fontSize: 11, color: GREEN, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "Arial, sans-serif", marginBottom: 6 }}>
-            {plan === "onetime" ? "One-Time Service" : "Monthly Service"} · {bins} bin{bins !== 1 ? "s" : ""}
-          </div>
-          <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.02em" }}>
-            <AnimatedNumber value={price} />
-          </div>
-          <div style={{ fontSize: 12, color: GRAY, fontFamily: "Arial, sans-serif", marginTop: 6 }}>
-            {plan === "monthly" ? "billed monthly · cancel anytime" : "one-time clean"}
-          </div>
-
-          {/* Breakdown */}
-          {bins > 1 && (
-            <div style={{
-              marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}`,
-              display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap",
-            }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 10, color: GRAY, fontFamily: "Arial, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>1st bin</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: WHITE }}>${firstBinPrice}</div>
-              </div>
-              <div style={{ color: BORDER, fontSize: 20, display: "flex", alignItems: "center" }}>+</div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 10, color: GRAY, fontFamily: "Arial, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>{bins - 1} add'l bin{bins - 1 !== 1 ? "s" : ""}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: WHITE }}>${(bins - 1) * addlBinPrice}</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* SAVINGS NUDGE */}
-        {plan === "onetime" && bins >= 1 && (
-          <div style={{
-            background: `rgba(45,184,75,0.08)`, border: `1px solid rgba(45,184,75,0.25)`,
-            borderRadius: 10, padding: "10px 14px", marginBottom: 14,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span style={{ fontSize: 18 }}>💡</span>
-            <div style={{ fontFamily: "Arial, sans-serif" }}>
-              <span style={{ fontSize: 13, color: GREEN_BRIGHT, fontWeight: 700 }}>
-                Switch to monthly and pay ${calcPrice("monthly", bins)}/mo
-              </span>
-              <span style={{ fontSize: 12, color: GRAY }}> — saves ${calcPrice("onetime", bins) - calcPrice("monthly", bins)} every visit</span>
-            </div>
-          </div>
-        )}
-        {plan === "monthly" && (
-          <div style={{
-            background: `rgba(45,184,75,0.08)`, border: `1px solid rgba(45,184,75,0.25)`,
-            borderRadius: 10, padding: "10px 14px", marginBottom: 14,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span style={{ fontSize: 18 }}>✅</span>
-            <div style={{ fontFamily: "Arial, sans-serif" }}>
-              <span style={{ fontSize: 13, color: GREEN_BRIGHT, fontWeight: 700 }}>
-                You're saving ${savings} vs. one-time
-              </span>
-              <span style={{ fontSize: 12, color: GRAY }}> every single month</span>
-            </div>
-          </div>
-        )}
-
-        {/* COMPARISON TABLE */}
-        <div style={{
-          background: DARK2, border: `1px solid ${BORDER}`, borderRadius: 12,
-          overflow: "hidden", marginBottom: 20,
-        }}>
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-            background: "#0D130D", borderBottom: `1px solid ${BORDER}`,
-          }}>
-            {["Bins", "One-Time", "Monthly"].map((h, i) => (
-              <div key={h} style={{
-                padding: "8px 4px", textAlign: "center",
-                fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
-                color: i === 0 ? GRAY : i === (plan === "onetime" ? 1 : 2) ? GREEN : GRAY,
-                textTransform: "uppercase",
-                borderRight: i < 2 ? `1px solid ${BORDER}` : "none",
-              }}>{h}</div>
-            ))}
-          </div>
-          {[1, 2, 3, 4, 5].map((n, idx) => (
-            <div key={n} style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-              background: bins === n ? `rgba(45,184,75,0.06)` : idx % 2 === 0 ? DARK2 : PANEL,
-              borderBottom: `1px solid ${BORDER}`,
-            }}>
-              {[
-                n.toString(),
-                `$${calcPrice("onetime", n)}`,
-                `$${calcPrice("monthly", n)}`,
-              ].map((val, i) => (
-                <div key={i} style={{
-                  padding: "8px 4px", textAlign: "center",
-                  fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 700 : 900,
-                  color: bins === n && i > 0 ? (plan === "onetime" && i === 1 ? GREEN_BRIGHT : plan === "monthly" && i === 2 ? GREEN_BRIGHT : WHITE) : i === 0 ? GRAY : WHITE,
-                  borderRight: i < 2 ? `1px solid ${BORDER}` : "none",
-                  fontFamily: i === 0 ? "inherit" : "Arial, sans-serif",
-                }}>{val}</div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* FOOTER */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 11, color: "#334033", fontFamily: "Arial, sans-serif", letterSpacing: "0.04em" }}>
-            SpotSpeck Sanitation · Greater Boston, MA
-          </div>
-          <div style={{ fontSize: 10, color: "#263026", fontFamily: "Arial, sans-serif", marginTop: 3 }}>
-            Norwood · Westwood · Walpole · Dedham · Canton
-          </div>
-        </div>
-
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-badge">
+      <span class="logo-icon">🗑️</span>
+      <div>
+        <div class="logo-name">SPOTSPECK</div>
+        <div class="logo-sub">SANITATION</div>
       </div>
     </div>
-  );
-}
+    <div class="header-sub">Bin Cleaning Price Calculator</div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- PLAN TOGGLE -->
+    <div class="plan-toggle">
+      <button class="plan-btn active" id="btn-onetime" onclick="setPlan('onetime')">
+        <div class="plan-btn-label">ONE-TIME</div>
+        <div class="plan-btn-sub">From $35</div>
+      </button>
+      <button class="plan-btn" id="btn-monthly" onclick="setPlan('monthly')">
+        <div class="plan-btn-label">MONTHLY</div>
+        <div class="plan-btn-sub">From $25 · Save more</div>
+      </button>
+    </div>
+
+    <!-- RATE STRIP -->
+    <div class="rate-strip">
+      <div class="rate-card">
+        <div class="rate-label">1st bin</div>
+        <div class="rate-price green" id="first-bin-price">$35</div>
+        <div class="rate-note">flat rate</div>
+      </div>
+      <div class="rate-plus">+</div>
+      <div class="rate-card">
+        <div class="rate-label">each add'l</div>
+        <div class="rate-price white">$10</div>
+        <div class="rate-note">per bin</div>
+      </div>
+    </div>
+
+    <!-- BIN COUNTER -->
+    <div class="bin-card">
+      <div class="bin-card-label">How many bins?</div>
+      <div class="bin-icons" id="bin-icons"></div>
+      <div class="counter-row">
+        <button class="counter-btn" id="btn-minus" onclick="changeBins(-1)">−</button>
+        <div>
+          <div class="counter-num" id="counter-num">1</div>
+          <div class="counter-unit" id="counter-unit">bin</div>
+        </div>
+        <button class="counter-btn" id="btn-plus" onclick="changeBins(1)">+</button>
+      </div>
+      <div class="quick-picks" id="quick-picks"></div>
+    </div>
+
+    <!-- PRICE DISPLAY -->
+    <div class="price-card">
+      <div class="price-eyebrow" id="price-eyebrow">One-Time Service · 1 bin</div>
+      <div class="price-big" id="price-big">$35</div>
+      <div class="price-note" id="price-note">one-time clean</div>
+      <div class="price-breakdown" id="price-breakdown" style="display:none;"></div>
+    </div>
+
+    <!-- NUDGE -->
+    <div class="nudge" id="nudge">
+      <span class="nudge-icon">💡</span>
+      <div>
+        <span class="nudge-strong" id="nudge-strong"></span>
+        <span class="nudge-soft" id="nudge-soft"></span>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="compare-table">
+      <div class="compare-head">
+        <div class="compare-head-cell">Bins</div>
+        <div class="compare-head-cell active" id="head-onetime">One-Time</div>
+        <div class="compare-head-cell" id="head-monthly">Monthly</div>
+      </div>
+      <div id="compare-body"></div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="footer-line1">SpotSpeck Sanitation · Greater Boston, MA</div>
+      <div class="footer-line2">Norwood · Westwood · Walpole · Dedham · Canton</div>
+    </div>
+
+  </div>
+
+  <script>
+    let plan = 'onetime';
+    let bins = 1;
+
+    function calcPrice(p, b) {
+      if (b === 0) return 0;
+      const first = p === 'onetime' ? 35 : 25;
+      return first + Math.max(0, b - 1) * 10;
+    }
+
+    function setPlan(p) {
+      plan = p;
+      document.getElementById('btn-onetime').classList.toggle('active', p === 'onetime');
+      document.getElementById('btn-monthly').classList.toggle('active', p === 'monthly');
+      document.getElementById('first-bin-price').textContent = p === 'onetime' ? '$35' : '$25';
+      document.getElementById('head-onetime').classList.toggle('active', p === 'onetime');
+      document.getElementById('head-monthly').classList.toggle('active', p === 'monthly');
+      render();
+    }
+
+    function changeBins(delta) {
+      bins = Math.min(20, Math.max(1, bins + delta));
+      render();
+    }
+
+    function setBins(n) {
+      bins = n;
+      render();
+    }
+
+    function binSVG(clean) {
+      if (clean) {
+        return `<svg width="38" height="44" viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="41" r="3" fill="#1A8C33"/>
+          <circle cx="28" cy="41" r="3" fill="#1A8C33"/>
+          <rect x="4" y="12" width="30" height="26" rx="3" fill="#1A8C33" stroke="#2DB84B" stroke-width="1.5"/>
+          <path d="M15 23l4-5 4 5h-2.5v4h-3v-4H15z M13 26h12" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <rect x="2" y="8" width="34" height="6" rx="2" fill="#1A8C33" stroke="#2DB84B" stroke-width="1.5"/>
+          <rect x="14" y="5" width="10" height="4" rx="2" fill="#155228" stroke="#1A8C33" stroke-width="1"/>
+          <path d="M33 6l1 2 1-2-1-2-1 2z" fill="#39E05A"/>
+          <path d="M5 10l.7 1.4 .7-1.4-.7-1.4-.7 1.4z" fill="#39E05A" opacity="0.7"/>
+        </svg>`;
+      } else {
+        return `<svg width="38" height="44" viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="41" r="3" fill="#3A3020"/>
+          <circle cx="28" cy="41" r="3" fill="#3A3020"/>
+          <rect x="4" y="12" width="30" height="26" rx="3" fill="#2A2010" stroke="#5A4A20" stroke-width="1.5"/>
+          <circle cx="13" cy="22" r="3" fill="#6B5020" opacity="0.8"/>
+          <circle cx="24" cy="28" r="2" fill="#5A4018" opacity="0.7"/>
+          <circle cx="18" cy="18" r="1.5" fill="#7A6030" opacity="0.6"/>
+          <rect x="14" y="19" width="10" height="12" rx="1" stroke="#8A7040" stroke-width="1.5" fill="none"/>
+          <rect x="2" y="8" width="34" height="6" rx="2" fill="#1A1508" stroke="#4A3A18" stroke-width="1.5"/>
+          <rect x="14" y="5" width="10" height="4" rx="2" fill="#252015" stroke="#4A3A18" stroke-width="1"/>
+        </svg>`;
+      }
+    }
+
+    function render() {
+      const price = calcPrice(plan, bins);
+      const otherPrice = calcPrice(plan === 'onetime' ? 'monthly' : 'onetime', bins);
+      const firstBin = plan === 'onetime' ? 35 : 25;
+
+      // Counter
+      document.getElementById('counter-num').textContent = bins;
+      document.getElementById('counter-unit').textContent = bins === 1 ? 'bin' : 'bins';
+      document.getElementById('btn-minus').disabled = bins <= 1;
+      document.getElementById('btn-plus').disabled = bins >= 20;
+
+      // Bin icons
+      const iconWrap = document.getElementById('bin-icons');
+      iconWrap.innerHTML = '';
+      const show = Math.min(bins, 10);
+      for (let i = 0; i < show; i++) {
+        const span = document.createElement('span');
+        span.className = 'bin-svg';
+        span.innerHTML = binSVG(true);
+        iconWrap.appendChild(span);
+      }
+      if (bins > 10) {
+        const ov = document.createElement('div');
+        ov.className = 'bin-overflow';
+        ov.textContent = '+' + (bins - 10);
+        iconWrap.appendChild(ov);
+      }
+
+      // Quick picks
+      const qp = document.getElementById('quick-picks');
+      qp.innerHTML = '';
+      [1,2,3,4,5].forEach(n => {
+        const b = document.createElement('button');
+        b.className = 'quick-btn' + (bins === n ? ' active' : '');
+        b.textContent = n;
+        b.onclick = () => setBins(n);
+        qp.appendChild(b);
+      });
+
+      // Price display
+      const planLabel = plan === 'onetime' ? 'One-Time Service' : 'Monthly Service';
+      document.getElementById('price-eyebrow').textContent = `${planLabel} · ${bins} bin${bins !== 1 ? 's' : ''}`;
+      document.getElementById('price-big').textContent = '$' + price;
+      document.getElementById('price-note').textContent = plan === 'monthly' ? 'billed monthly · cancel anytime' : 'one-time clean';
+
+      const breakdown = document.getElementById('price-breakdown');
+      if (bins > 1) {
+        breakdown.style.display = 'flex';
+        breakdown.innerHTML = `
+          <div class="breakdown-item">
+            <div class="breakdown-label">1st bin</div>
+            <div class="breakdown-val">$${firstBin}</div>
+          </div>
+          <div class="breakdown-plus">+</div>
+          <div class="breakdown-item">
+            <div class="breakdown-label">${bins-1} add'l bin${bins-1 !== 1 ? 's' : ''}</div>
+            <div class="breakdown-val">$${(bins-1)*10}</div>
+          </div>
+        `;
+      } else {
+        breakdown.style.display = 'none';
+      }
+
+      // Nudge
+      const nudge = document.getElementById('nudge');
+      if (plan === 'onetime') {
+        const monthlyPrice = calcPrice('monthly', bins);
+        const save = price - monthlyPrice;
+        document.getElementById('nudge-strong').textContent = `Switch to monthly and pay $${monthlyPrice}/mo`;
+        document.getElementById('nudge-soft').textContent = ` — saves $${save} every visit`;
+        nudge.querySelector('.nudge-icon').textContent = '💡';
+      } else {
+        const onetimePrice = calcPrice('onetime', bins);
+        const save = onetimePrice - price;
+        document.getElementById('nudge-strong').textContent = `You're saving $${save} vs. one-time`;
+        document.getElementById('nudge-soft').textContent = ` every single month`;
+        nudge.querySelector('.nudge-icon').textContent = '✅';
+      }
+
+      // Comparison table
+      const tbody = document.getElementById('compare-body');
+      tbody.innerHTML = '';
+      [1,2,3,4,5].forEach((n, idx) => {
+        const row = document.createElement('div');
+        row.className = 'compare-row' + (bins === n ? ' highlight' : '');
+        const ot = calcPrice('onetime', n);
+        const mo = calcPrice('monthly', n);
+        row.innerHTML = `
+          <div class="compare-cell">${n}</div>
+          <div class="compare-cell${bins === n && plan === 'onetime' ? ' active-val' : ''}">$${ot}</div>
+          <div class="compare-cell${bins === n && plan === 'monthly' ? ' active-val' : ''}">$${mo}</div>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Init
+    render();
+  </script>
+</body>
+</html>
